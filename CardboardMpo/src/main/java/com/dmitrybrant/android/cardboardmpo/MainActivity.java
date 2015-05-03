@@ -1,3 +1,18 @@
+/*
+ * Copyright 2015 Dmitry Brant.
+
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 package com.dmitrybrant.android.cardboardmpo;
 
@@ -8,7 +23,6 @@ import com.google.vrtoolkit.cardboard.HeadTransform;
 import com.google.vrtoolkit.cardboard.Viewport;
 
 import android.content.Context;
-import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
@@ -21,7 +35,6 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -85,40 +98,21 @@ public class MainActivity extends CardboardActivity implements CardboardView.Ste
 
   @Override
   public void onRendererShutdown() {
-    Log.i(TAG, "onRendererShutdown");
   }
 
   @Override
   public void onSurfaceChanged(int width, int height) {
-    Log.i(TAG, "onSurfaceChanged");
   }
 
-  /**
-   * Creates the buffers we use to store information about the 3D world.
-   *
-   * <p>OpenGL doesn't use Java arrays, but rather needs data in a format it can understand.
-   * Hence we use ByteBuffers.
-   *
-   * @param config The EGL configuration used when creating the surface.
-   */
   @Override
   public void onSurfaceCreated(EGLConfig config) {
   }
 
-  /**
-   * Prepares OpenGL ES before we draw a frame.
-   *
-   * @param headTransform The head transformation in the new frame.
-   */
   @Override
   public void onNewFrame(HeadTransform headTransform) {
+    // TODO: shift the image based on the head transform.
   }
 
-  /**
-   * Draws a frame for an eye.
-   *
-   * @param eye The eye to render. Includes all required transformations.
-   */
   @Override
   public void onDrawEye(Eye eye) {
   }
@@ -129,10 +123,11 @@ public class MainActivity extends CardboardActivity implements CardboardView.Ste
 
   /**
    * Called when the Cardboard trigger is pulled.
+   * This is the only thing we'll really "use" from the CardboardView...
    */
   @Override
   public void onCardboardTrigger() {
-    Log.i(TAG, "onCardboardTrigger");
+    Log.d(TAG, "onCardboardTrigger");
 
     currentFileIndex++;
     loadNextMpo();
@@ -141,7 +136,10 @@ public class MainActivity extends CardboardActivity implements CardboardView.Ste
     vibrator.vibrate(50);
   }
 
-
+  /**
+   * Task that finds all MPO files in external storage.
+   * Returns a (flat) list of File objects.
+   */
   private class MpoFindTask extends AsyncTask<Void, Integer, List<File>> {
 
     private List<File> getMpoFiles(File parentDir, int level) {
@@ -159,7 +157,7 @@ public class MainActivity extends CardboardActivity implements CardboardView.Ste
         } else {
           if (file.getName().toLowerCase(Locale.ENGLISH).endsWith(".mpo")) {
             inFiles.add(file);
-            Log.d(TAG, ">>>>>>>>> found: " + file.getAbsolutePath());
+            Log.d(TAG, "Found MPO: " + file.getAbsolutePath());
           }
         }
       }
@@ -171,6 +169,7 @@ public class MainActivity extends CardboardActivity implements CardboardView.Ste
       if (Environment.getExternalStorageDirectory() != null) {
         mpoFiles.addAll(getMpoFiles(Environment.getExternalStorageDirectory(), 0));
       }
+      // TODO: find better way of getting external SD card directory?
       mpoFiles.addAll(getMpoFiles(new File("/mnt/extSdCard"), 0));
       return mpoFiles;
     }
@@ -188,62 +187,25 @@ public class MainActivity extends CardboardActivity implements CardboardView.Ste
     }
   }
 
-
-  private class MpoLoadTask extends AsyncTask<File, Integer, List<Long>> {
-    private File mpoFile;
-
-    protected List<Long> doInBackground(File... file) {
-      final int chunkLength = 4096;
-      final byte[] sig1 = new byte[] { (byte)0xff, (byte)0xd8, (byte)0xff, (byte)0xe0 };
-      final byte[] sig2 = new byte[] { (byte)0xff, (byte)0xd8, (byte)0xff, (byte)0xe1 };
-      mpoFile = file[0];
-      List<Long> mpoOffsets = new ArrayList<>();
-
-      FileInputStream fs = null;
-      try {
-        fs = new FileInputStream(mpoFile);
-        byte[] tempBytes = new byte[chunkLength];
-        long currentOffset = 0;
-
-        Log.d(TAG, "Processing file: " + mpoFile.getName());
-        while (true) {
-          if (fs.read(tempBytes, 0, chunkLength) <= 0) {
-            break;
-          }
-          int sigOffset = SearchBytes(tempBytes, sig1, 0, chunkLength);
-          if (sigOffset == -1) {
-            sigOffset = SearchBytes(tempBytes, sig2, 0, chunkLength);
-          }
-          if (sigOffset >= 0) {
-            // it's a new image
-            Log.d(TAG, "Found new JPG at offset " + (currentOffset + sigOffset));
-            mpoOffsets.add(currentOffset + sigOffset);
-          }
-          currentOffset += chunkLength;
-        }
-
-      } catch (IOException e) {
-        Log.e(TAG, "Error while reading file.", e);
-      }
-      if (fs != null) {
-        try {
-          fs.close();
-        } catch (IOException e) {
-          // don't worry
-        }
-      }
-      return mpoOffsets;
-    }
-
+  private class MainLoadTask extends MpoUtils.MpoLoadTask {
+    @Override
     protected void onProgressUpdate(Integer... progress) {
     }
 
+    @Override
     protected void onPostExecute(List<Long> results) {
       try {
         if (results.size() == 2) {
-          Log.d(TAG, "Found 2 JPGs, so loading them...");
-          loadMpoBitmapFromFileIntoView(mpoFile, results.get(0), imageLeft);
-          loadMpoBitmapFromFileIntoView(mpoFile, results.get(1), imageRight);
+          // this is the most common type of MPO, which is left-eye / right-eye
+          Log.d(TAG, "Found 2 JPGs, so loading 0/1...");
+          MpoUtils.loadMpoBitmapFromFileIntoView(mpoFile, results.get(0), imageLeft);
+          MpoUtils.loadMpoBitmapFromFileIntoView(mpoFile, results.get(1), imageRight);
+        } else if (results.size() == 4) {
+          // I've seen this type in the wild, as well, which seems to be
+          // left-eye-hi-res / left-eye-lo-res / right-eye-hi-res / right-eye-lo-res
+          Log.d(TAG, "Found 4 JPGs, so loading 0/2...");
+          MpoUtils.loadMpoBitmapFromFileIntoView(mpoFile, results.get(0), imageLeft);
+          MpoUtils.loadMpoBitmapFromFileIntoView(mpoFile, results.get(2), imageRight);
         }
       } catch (IOException e) {
         Log.e(TAG, "Error while reading file.", e);
@@ -255,30 +217,9 @@ public class MainActivity extends CardboardActivity implements CardboardView.Ste
     }
   }
 
-  private void loadMpoBitmapFromFileIntoView(File file, long offset, ImageView view) throws IOException {
-    BitmapFactory.Options opts = new BitmapFactory.Options();
-    FileInputStream fs = new FileInputStream(file);
-    fs.skip(offset);
-    //Decode image size
-    opts.inJustDecodeBounds = true;
-    BitmapFactory.decodeStream(fs, null, opts);
-    fs.close();
-    int scale = 1;
-    if (opts.outHeight > view.getHeight() || opts.outWidth > view.getWidth()) {
-      scale = (int) Math.pow(2, (int) Math.round(Math.log(view.getWidth() / (double) Math.max(opts.outHeight, opts.outWidth)) / Math.log(0.5)));
-    }
-    if ((opts.outHeight <= 0) || (opts.outWidth <= 0)) {
-      return;
-    }
-    fs = new FileInputStream(file);
-    fs.skip(offset);
-    //Decode with inSampleSize
-    BitmapFactory.Options opts2 = new BitmapFactory.Options();
-    opts2.inSampleSize = scale;
-    view.setImageBitmap(BitmapFactory.decodeStream(fs, null, opts2));
-    fs.close();
-  }
-
+  /**
+   * Load the next MPO file in our sequence. Wrap to the beginning if we're at the end.
+   */
   private void loadNextMpo() {
     if (mpoFileList.size() == 0) {
       return;
@@ -290,27 +231,7 @@ public class MainActivity extends CardboardActivity implements CardboardView.Ste
     setStatus(true, String.format(getString(R.string.status_loading_file), mpoFileList.get(currentFileIndex).getName()));
     imageLeft.setImageDrawable(null);
     imageRight.setImageDrawable(null);
-    new MpoLoadTask().execute(mpoFileList.get(currentFileIndex));
-  }
-
-
-  public static int SearchBytes(byte[] bytesToSearch, byte[] matchBytes, int startIndex, int count) {
-    int ret = -1, max = count - matchBytes.length + 1;
-    boolean found;
-    for (int i = startIndex; i < max; i++) {
-      found = true;
-      for (int j = 0; j < matchBytes.length; j++) {
-        if (bytesToSearch[i + j] != matchBytes[j]) {
-          found = false;
-          break;
-        }
-      }
-      if (found) {
-        ret = i;
-        break;
-      }
-    }
-    return ret;
+    new MainLoadTask().execute(mpoFileList.get(currentFileIndex));
   }
 
 }
