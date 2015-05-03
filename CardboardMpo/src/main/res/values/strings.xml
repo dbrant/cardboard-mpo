@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Cardboard MPO Viewer</string>
+    <string name="status_finding_files">Searching for MPO files…</string>
+    <string name="status_loading_file">Loading %s…</string>
 </resources>

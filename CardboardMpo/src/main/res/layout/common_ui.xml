@@ -20,19 +20,61 @@
         android:layout_alignParentLeft="true"
         android:layout_alignParentTop="true" >
 
-        <ImageView
-            android:id="@+id/image_left"
+        <FrameLayout
             android:layout_width="0dp"
             android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:src="@drawable/ic_launcher"/>
+            android:layout_weight="1">
+            <ImageView
+                android:id="@+id/image_left"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="fitCenter"/>
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_gravity="center">
+                <ProgressBar
+                    android:id="@+id/progress_left"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_horizontal"/>
+                <TextView
+                    android:id="@+id/status_text_left"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:paddingTop="16dp"
+                    android:gravity="center_horizontal"/>
+            </LinearLayout>
+        </FrameLayout>
 
-        <ImageView
-            android:id="@+id/image_right"
+        <FrameLayout
             android:layout_width="0dp"
             android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:src="@drawable/ic_launcher"/>
+            android:layout_weight="1">
+            <ImageView
+                android:id="@+id/image_right"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="fitCenter"/>
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_gravity="center">
+                <ProgressBar
+                    android:id="@+id/progress_right"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_horizontal"/>
+                <TextView
+                    android:id="@+id/status_text_right"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:paddingTop="16dp"
+                    android:gravity="center_horizontal"/>
+            </LinearLayout>
+        </FrameLayout>
 
     </LinearLayout>
 
