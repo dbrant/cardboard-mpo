@@ -23,6 +23,7 @@ import com.google.vrtoolkit.cardboard.HeadTransform;
 import com.google.vrtoolkit.cardboard.Viewport;
 
 import android.content.Context;
+import android.graphics.Bitmap;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
@@ -58,6 +59,11 @@ public class MainActivity extends CardboardActivity implements CardboardView.Ste
   private TextView statusLeft;
   private TextView statusRight;
 
+  private Bitmap bmpLeft;
+  private Bitmap bmpRight;
+  // final field for synchronizing access to the bitmaps above
+  private final Boolean bmpLock = false;
+
   @Override
   public void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
@@ -81,6 +87,8 @@ public class MainActivity extends CardboardActivity implements CardboardView.Ste
 
     setProgress(true);
     setStatus(true, getString(R.string.status_finding_files));
+
+    // kick off our task to find all MPOs, which will in turn kick off showing the first one.
     new MpoFindTask().execute((Void)null);
   }
 
@@ -188,32 +196,49 @@ public class MainActivity extends CardboardActivity implements CardboardView.Ste
   }
 
   private class MainLoadTask extends MpoUtils.MpoLoadTask {
+
+    @Override
+    protected List<Long> doInBackground(File... file) {
+      List<Long> results = super.doInBackground(file);
+      try {
+        synchronized (bmpLock) {
+          if (results.size() == 2) {
+            // this is the most common type of MPO, which is left-eye / right-eye
+            Log.d(TAG, "Found 2 JPGs, so loading 0/1...");
+            bmpLeft = MpoUtils.loadMpoBitmapFromFile(mpoFile, results.get(0), imageLeft.getWidth(), imageLeft.getHeight());
+            bmpRight = MpoUtils.loadMpoBitmapFromFile(mpoFile, results.get(1), imageRight.getWidth(), imageRight.getHeight());
+          } else if (results.size() == 4) {
+            // I've seen this type in the wild, as well, which seems to be
+            // left-eye-hi-res / left-eye-lo-res / right-eye-hi-res / right-eye-lo-res
+            Log.d(TAG, "Found 4 JPGs, so loading 0/2...");
+            bmpLeft = MpoUtils.loadMpoBitmapFromFile(mpoFile, results.get(0), imageLeft.getWidth(), imageLeft.getHeight());
+            bmpRight = MpoUtils.loadMpoBitmapFromFile(mpoFile, results.get(2), imageRight.getWidth(), imageRight.getHeight());
+          }
+        }
+      } catch (IOException e) {
+        Log.e(TAG, "Error while reading file.", e);
+      }
+      return results;
+    }
+
     @Override
     protected void onProgressUpdate(Integer... progress) {
     }
 
     @Override
     protected void onPostExecute(List<Long> results) {
-      try {
-        if (results.size() == 2) {
-          // this is the most common type of MPO, which is left-eye / right-eye
-          Log.d(TAG, "Found 2 JPGs, so loading 0/1...");
-          MpoUtils.loadMpoBitmapFromFileIntoView(mpoFile, results.get(0), imageLeft);
-          MpoUtils.loadMpoBitmapFromFileIntoView(mpoFile, results.get(1), imageRight);
-        } else if (results.size() == 4) {
-          // I've seen this type in the wild, as well, which seems to be
-          // left-eye-hi-res / left-eye-lo-res / right-eye-hi-res / right-eye-lo-res
-          Log.d(TAG, "Found 4 JPGs, so loading 0/2...");
-          MpoUtils.loadMpoBitmapFromFileIntoView(mpoFile, results.get(0), imageLeft);
-          MpoUtils.loadMpoBitmapFromFileIntoView(mpoFile, results.get(2), imageRight);
+      synchronized (bmpLock) {
+        if (bmpLeft == null || bmpRight == null) {
+          setStatus(true, getString(R.string.status_error_load));
+        } else {
+          imageLeft.setImageBitmap(bmpLeft);
+          imageRight.setImageBitmap(bmpRight);
+          imageLeft.startAnimation(fadeInAnim);
+          imageRight.startAnimation(fadeInAnim);
+          setStatus(false, "");
         }
-      } catch (IOException e) {
-        Log.e(TAG, "Error while reading file.", e);
       }
       setProgress(false);
-      setStatus(false, "");
-      imageLeft.startAnimation(fadeInAnim);
-      imageRight.startAnimation(fadeInAnim);
     }
   }
 
@@ -231,7 +256,21 @@ public class MainActivity extends CardboardActivity implements CardboardView.Ste
     setStatus(true, String.format(getString(R.string.status_loading_file), mpoFileList.get(currentFileIndex).getName()));
     imageLeft.setImageDrawable(null);
     imageRight.setImageDrawable(null);
+    synchronized (bmpLock) {
+      cleanupBitmap(bmpLeft);
+      cleanupBitmap(bmpRight);
+    }
     new MainLoadTask().execute(mpoFileList.get(currentFileIndex));
+  }
+
+  private void cleanupBitmap(Bitmap bmp) {
+    if (bmp != null) {
+      try {
+        bmp.recycle();
+      } catch (Exception e) {
+        Log.e(TAG, "Error while cleaning up bitmap.", e);
+      }
+    }
   }
 
 }

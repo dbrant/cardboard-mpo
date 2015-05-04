@@ -16,10 +16,10 @@
 
 package com.dmitrybrant.android.cardboardmpo;
 
+import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
 import android.util.Log;
-import android.widget.ImageView;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -39,6 +39,11 @@ public class MpoUtils {
     protected File mpoFile;
 
     protected List<Long> doInBackground(File... file) {
+      /**
+       * An MPO file is simply multiple JPG files concatenated together.
+       * We can detect their locations by simply looking for the beginning markers of a
+       * JPG image. So that's what we'll do.
+       */
       final int chunkLength = 4096;
       final byte[] sig1 = new byte[] { (byte)0xff, (byte)0xd8, (byte)0xff, (byte)0xe0 };
       final byte[] sig2 = new byte[] { (byte)0xff, (byte)0xd8, (byte)0xff, (byte)0xe1 };
@@ -88,30 +93,42 @@ public class MpoUtils {
     }
   }
 
-  public static void loadMpoBitmapFromFileIntoView(File file, long offset, ImageView view) throws IOException {
+  public static Bitmap loadMpoBitmapFromFile(File file, long offset, int maxWidth, int maxHeight) throws IOException {
+    // First, decode the width and height of the image, so that we know how much to scale
+    // it down when loading it into our ImageView (so we don't need to do a huge allocation).
     BitmapFactory.Options opts = new BitmapFactory.Options();
     FileInputStream fs = new FileInputStream(file);
     fs.skip(offset);
-    //Decode image size
     opts.inJustDecodeBounds = true;
     BitmapFactory.decodeStream(fs, null, opts);
     fs.close();
     int scale = 1;
-    if (opts.outHeight > view.getHeight() || opts.outWidth > view.getWidth()) {
-      scale = (int) Math.pow(2, (int) Math.round(Math.log(view.getWidth() / (double) Math.max(opts.outHeight, opts.outWidth)) / Math.log(0.5)));
+    if (opts.outHeight > maxHeight || opts.outWidth > maxWidth) {
+      scale = (int) Math.pow(2, (int) Math.round(Math.log(maxWidth / (double) Math.max(opts.outHeight, opts.outWidth)) / Math.log(0.5)));
     }
     if ((opts.outHeight <= 0) || (opts.outWidth <= 0)) {
-      return;
+      return null;
     }
+    // Decode the image for real, but now with a sampleSize.
+    // We have to reopen the file stream, and re-skip to the correct offset, since
+    // FileInputStream doesn't support reset().
     fs = new FileInputStream(file);
     fs.skip(offset);
-    //Decode with inSampleSize
     BitmapFactory.Options opts2 = new BitmapFactory.Options();
     opts2.inSampleSize = scale;
-    view.setImageBitmap(BitmapFactory.decodeStream(fs, null, opts2));
+    Bitmap bmp = BitmapFactory.decodeStream(fs, null, opts2);
     fs.close();
+    return bmp;
   }
 
+  /**
+   * Search a byte array for a specific sequence of bytes.
+   * @param bytesToSearch Byte array to search.
+   * @param matchBytes Sequence of bytes to find in the array.
+   * @param startIndex Offset within the array from which to start searching.
+   * @param count Number of bytes within the array to search.
+   * @return Byte offset within the array of the specified sequence, or -1 if it was not found.
+   */
   public static int searchBytes(byte[] bytesToSearch, byte[] matchBytes, int startIndex, int count) {
     int ret = -1, max = count - matchBytes.length + 1;
     boolean found;
