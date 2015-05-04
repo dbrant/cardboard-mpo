@@ -187,9 +187,13 @@ public class MainActivity extends CardboardActivity implements CardboardView.Ste
 
     protected void onPostExecute(List<File> results) {
       mpoFileList.clear();
+      setProgress(false);
+      if (results.size() == 0) {
+        setStatus(true, getString(R.string.status_error_not_found));
+        return;
+      }
       mpoFileList.addAll(results);
       currentFileIndex = 0;
-      setProgress(false);
       setStatus(false, "");
       loadNextMpo();
     }
