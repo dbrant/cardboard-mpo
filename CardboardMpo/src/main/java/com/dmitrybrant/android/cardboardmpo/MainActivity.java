@@ -152,7 +152,7 @@ public class MainActivity extends CardboardActivity implements CardboardView.Ste
 
     private List<File> getMpoFiles(File parentDir, int level) {
       ArrayList<File> inFiles = new ArrayList<>();
-      if (parentDir == null || level > 2) {
+      if (parentDir == null || level > 3) {
         return inFiles;
       }
       File[] files = parentDir.listFiles();
@@ -176,6 +176,8 @@ public class MainActivity extends CardboardActivity implements CardboardView.Ste
       List<File> mpoFiles = new ArrayList<>();
       if (Environment.getExternalStorageDirectory() != null) {
         mpoFiles.addAll(getMpoFiles(Environment.getExternalStorageDirectory(), 0));
+      } else {
+        mpoFiles.addAll(getMpoFiles(new File("/mnt/sdcard"), 0));
       }
       // TODO: find better way of getting external SD card directory?
       mpoFiles.addAll(getMpoFiles(new File("/mnt/extSdCard"), 0));
