@@ -26,15 +26,6 @@
             </intent-filter>
         </activity>
 
-        <receiver
-            android:name="com.dmitrybrant.android.cardboardmpo.InstallReferrerReceiver"
-            android:exported="true"
-            tools:ignore="ExportedReceiver">
-            <intent-filter>
-                <action android:name="com.android.vending.INSTALL_REFERRER" />
-            </intent-filter>
-        </receiver>
-
     </application>
 
 </manifest>
