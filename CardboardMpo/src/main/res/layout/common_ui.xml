@@ -1,83 +1,62 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/ui_layout"
-    android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="match_parent" >
 
     <com.google.vrtoolkit.cardboard.CardboardView
         android:id="@+id/cardboard_view"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_alignParentTop="true"
-        android:layout_alignParentLeft="true" />
+        android:layout_height="match_parent" />
 
     <LinearLayout
-        android:id="@+id/image_container"
+        android:id="@+id/overlay_container"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:layout_alignParentLeft="true"
-        android:layout_alignParentTop="true" >
+        android:layout_gravity="center"
+        android:baselineAligned="false">
 
-        <FrameLayout
+        <LinearLayout
             android:layout_width="0dp"
             android:layout_height="match_parent"
-            android:layout_weight="1">
-            <ImageView
-                android:id="@+id/image_left"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:scaleType="fitCenter"
-                android:contentDescription="@null"/>
-            <LinearLayout
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:layout_gravity="center">
+            <ProgressBar
+                android:id="@+id/progress_left"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"/>
+            <TextView
+                android:id="@+id/status_text_left"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:layout_gravity="center">
-                <ProgressBar
-                    android:id="@+id/progress_left"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center_horizontal"/>
-                <TextView
-                    android:id="@+id/status_text_left"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:paddingTop="16dp"
-                    android:gravity="center_horizontal"/>
-            </LinearLayout>
-        </FrameLayout>
+                android:padding="8dp"
+                android:gravity="center_horizontal"
+                android:background="@color/info_background"/>
+        </LinearLayout>
 
-        <FrameLayout
+        <LinearLayout
             android:layout_width="0dp"
             android:layout_height="match_parent"
-            android:layout_weight="1">
-            <ImageView
-                android:id="@+id/image_right"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:scaleType="fitCenter"
-                android:contentDescription="@null"/>
-            <LinearLayout
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:layout_gravity="center">
+            <ProgressBar
+                android:id="@+id/progress_right"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"/>
+            <TextView
+                android:id="@+id/status_text_right"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:layout_gravity="center">
-                <ProgressBar
-                    android:id="@+id/progress_right"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center_horizontal"/>
-                <TextView
-                    android:id="@+id/status_text_right"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:paddingTop="16dp"
-                    android:gravity="center_horizontal"/>
-            </LinearLayout>
-        </FrameLayout>
+                android:padding="8dp"
+                android:gravity="center_horizontal"
+                android:background="@color/info_background"/>
+        </LinearLayout>
 
     </LinearLayout>
-
-</RelativeLayout>
+</FrameLayout>

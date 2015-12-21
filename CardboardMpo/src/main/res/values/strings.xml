@@ -5,4 +5,5 @@
     <string name="status_loading_file">Loading %s…</string>
     <string name="status_error_load">Error while loading file.</string>
     <string name="status_error_not_found">No MPO files found.</string>
+    <string name="error_grant_permission">Please grant read permissions to search for pictures.</string>
 </resources>
