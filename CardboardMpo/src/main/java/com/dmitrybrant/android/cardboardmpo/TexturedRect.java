@@ -16,24 +16,10 @@
 
 package com.dmitrybrant.android.cardboardmpo;
 
-import android.content.Context;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.graphics.Color;
-import android.graphics.Typeface;
 import android.opengl.GLES20;
 import android.opengl.GLUtils;
 import android.opengl.Matrix;
-import android.util.AttributeSet;
-import android.util.TypedValue;
-import android.view.Gravity;
-import android.view.View;
-import android.view.ViewGroup;
-import android.view.animation.AlphaAnimation;
-import android.view.animation.Animation;
-import android.widget.ImageView;
-import android.widget.LinearLayout;
-import android.widget.TextView;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -41,13 +27,7 @@ import java.nio.FloatBuffer;
 import java.nio.ShortBuffer;
 
 public class TexturedRect {
-    private final Context context;
-
-    //Added for Textures
     private final FloatBuffer mCubeTextureCoordinates;
-    private int mTextureUniformHandle;
-    private int mTextureCoordinateHandle;
-    private final int mTextureCoordinateDataSize = 2;
     private int mTextureDataHandle = -1;
 
     private final String vertexShaderCode =
@@ -57,17 +37,15 @@ public class TexturedRect {
                     "attribute vec4 vPosition;" +
                     "void main() {" +
                     "  gl_Position = vPosition * uMVPMatrix;" +
-                    "v_TexCoordinate = a_TexCoordinate;" +
+                    "  v_TexCoordinate = a_TexCoordinate;" +
                     "}";
 
     private final String fragmentShaderCode =
             "precision mediump float;" +
-                    "uniform vec4 vColor;" +
                     "uniform sampler2D u_Texture;" +
                     "varying vec2 v_TexCoordinate;" +
                     "void main() {" +
-                    //"gl_FragColor = vColor;" +
-                    "gl_FragColor = texture2D(u_Texture, v_TexCoordinate);" +
+                    "  gl_FragColor = texture2D(u_Texture, v_TexCoordinate);" +
                     "}";
 
     private float[] modelMatrix;
@@ -78,23 +56,14 @@ public class TexturedRect {
     private final int shaderProgram;
     private final FloatBuffer vertexBuffer;
     private final ShortBuffer drawListBuffer;
-    private int mPositionHandle;
-    private int mColorHandle;
-    private int mMVPMatrixHandle;
 
     static final int COORDS_PER_VERTEX = 2;
     static float rectCoords[] = { -1f, 1f, -1f, -1f, 1f, -1f, 1f, 1f };
 
     private short drawOrder[] = { 0, 1, 2, 0, 2, 3 }; //Order to draw vertices
-    private final int vertexStride = COORDS_PER_VERTEX * 4; //Bytes per vertex
 
-    // Set color with red, green, blue and alpha (opacity) values
-    float color[] = { 0.63671875f, 0.76953125f, 0.22265625f, 1.0f };
-
-    public TexturedRect(final Context context)
+    public TexturedRect()
     {
-        this.context = context;
-
         ByteBuffer bb = ByteBuffer.allocateDirect(rectCoords.length * 4); // 4 bytes per float
         bb.order(ByteOrder.nativeOrder());
         vertexBuffer = bb.asFloatBuffer();
@@ -134,25 +103,23 @@ public class TexturedRect {
         }
         GLES20.glUseProgram(shaderProgram);
 
-        mPositionHandle = GLES20.glGetAttribLocation(shaderProgram, "vPosition");
+        int mPositionHandle = GLES20.glGetAttribLocation(shaderProgram, "vPosition");
         GLES20.glEnableVertexAttribArray(mPositionHandle);
+        final int vertexStride = COORDS_PER_VERTEX * 4; //Bytes per vertex
         GLES20.glVertexAttribPointer(mPositionHandle, COORDS_PER_VERTEX, GLES20.GL_FLOAT, false, vertexStride, vertexBuffer);
 
-        mColorHandle = GLES20.glGetUniformLocation(shaderProgram, "vColor");
-        GLES20.glUniform4fv(mColorHandle, 1, color, 0);
-
-        mTextureUniformHandle = GLES20.glGetAttribLocation(shaderProgram, "u_Texture");
-        mTextureCoordinateHandle = GLES20.glGetAttribLocation(shaderProgram, "a_TexCoordinate");
+        int mTextureUniformHandle = GLES20.glGetAttribLocation(shaderProgram, "u_Texture");
+        int mTextureCoordinateHandle = GLES20.glGetAttribLocation(shaderProgram, "a_TexCoordinate");
 
         GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
         GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, mTextureDataHandle);
         GLES20.glUniform1i(mTextureUniformHandle, 0);
 
         mCubeTextureCoordinates.position(0);
-        GLES20.glVertexAttribPointer(mTextureCoordinateHandle, mTextureCoordinateDataSize, GLES20.GL_FLOAT, false, 0, mCubeTextureCoordinates);
+        GLES20.glVertexAttribPointer(mTextureCoordinateHandle, 2, GLES20.GL_FLOAT, false, 0, mCubeTextureCoordinates);
         GLES20.glEnableVertexAttribArray(mTextureCoordinateHandle);
 
-        mMVPMatrixHandle = GLES20.glGetUniformLocation(shaderProgram, "uMVPMatrix");
+        int mMVPMatrixHandle = GLES20.glGetUniformLocation(shaderProgram, "uMVPMatrix");
         GLES20.glUniformMatrix4fv(mMVPMatrixHandle, 1, false, mvpMatrix, 0);
         GLES20.glDrawElements(GLES20.GL_TRIANGLES, drawOrder.length, GLES20.GL_UNSIGNED_SHORT, drawListBuffer);
 
@@ -161,13 +128,9 @@ public class TexturedRect {
 
     private static int loadShader(int type, String shaderCode)
     {
-        //Create a Vertex Shader Type Or a Fragment Shader Type (GLES20.GL_VERTEX_SHADER OR GLES20.GL_FRAGMENT_SHADER)
         int shader = GLES20.glCreateShader(type);
-
-        //Add The Source Code and Compile it
         GLES20.glShaderSource(shader, shaderCode);
         GLES20.glCompileShader(shader);
-
         return shader;
     }
 
@@ -178,7 +141,7 @@ public class TexturedRect {
 
     public void loadTexture(Bitmap bitmap) {
         final int[] textureHandle = new int[1];
-        if (mTextureDataHandle == -1) {
+        if (mTextureDataHandle != -1) {
             textureHandle[0] = mTextureDataHandle;
             GLES20.glDeleteTextures(1, textureHandle, 0);
             textureHandle[0] = 0;

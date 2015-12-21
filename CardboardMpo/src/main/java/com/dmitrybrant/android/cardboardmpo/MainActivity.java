@@ -56,8 +56,7 @@ public class MainActivity extends CardboardActivity implements CardboardView.Ste
     private static final int READ_PERMISSION_REQUEST = 50;
 
     private static final float Z_NEAR = 0.1f;
-    private static final float Z_FAR = 100.0f;
-
+    private static final float Z_FAR = 5.0f;
     private static final float CAMERA_Z = 0.01f;
 
     private List<File> mpoFileList = new ArrayList<>();
@@ -125,10 +124,10 @@ public class MainActivity extends CardboardActivity implements CardboardView.Ste
     @Override
     public void onSurfaceCreated(EGLConfig config) {
         Log.i(TAG, "onSurfaceCreated");
-        GLES20.glClearColor(0.0f, 0.0f, 0.3f, 1.0f);
+        GLES20.glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 
-        rectLeftEye = new TexturedRect(this);
-        rectRightEye = new TexturedRect(this);
+        rectLeftEye = new TexturedRect();
+        rectRightEye = new TexturedRect();
         checkGLError("Error after creating textures");
     }
 
@@ -146,10 +145,11 @@ public class MainActivity extends CardboardActivity implements CardboardView.Ste
         // Apply the eye transformation to the camera.
         Matrix.multiplyMM(view, 0, eye.getEyeView(), 0, camera, 0);
 
+        // TODO: Do something with the head transform (e.g. pan the photo around)
+        // For now, just reset the view matrix, so that the photo is in the center at all times.
         Matrix.setIdentityM(view, 0);
 
         float[] perspective = eye.getPerspective(Z_NEAR, Z_FAR);
-
         if (eye.getType() == 1) {
             Matrix.multiplyMM(modelView, 0, view, 0, rectLeftEye.getModelMatrix(), 0);
             Matrix.multiplyMM(modelViewProjection, 0, perspective, 0, modelView, 0);
@@ -229,24 +229,6 @@ public class MainActivity extends CardboardActivity implements CardboardView.Ste
         // kick off our task to find all MPOs, which will in turn kick off showing the first one.
         new MpoFindTask().execute((Void) null);
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     /**
      * Task that finds all MPO files in external storage.
