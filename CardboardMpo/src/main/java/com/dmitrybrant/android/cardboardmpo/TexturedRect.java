@@ -27,10 +27,8 @@ import java.nio.FloatBuffer;
 import java.nio.ShortBuffer;
 
 public class TexturedRect {
-    private final FloatBuffer mCubeTextureCoordinates;
-    private int mTextureDataHandle = -1;
 
-    private final String vertexShaderCode =
+    private final static String vertexShaderCode =
             "attribute vec2 a_TexCoordinate;" +
                     "varying vec2 v_TexCoordinate;" +
                     "uniform mat4 uMVPMatrix;" +
@@ -40,13 +38,16 @@ public class TexturedRect {
                     "  v_TexCoordinate = a_TexCoordinate;" +
                     "}";
 
-    private final String fragmentShaderCode =
+    private final static String fragmentShaderCode =
             "precision mediump float;" +
                     "uniform sampler2D u_Texture;" +
                     "varying vec2 v_TexCoordinate;" +
                     "void main() {" +
                     "  gl_FragColor = texture2D(u_Texture, v_TexCoordinate);" +
                     "}";
+
+    private final FloatBuffer textureCoordinates;
+    private int textureDataHandle = -1;
 
     private float[] modelMatrix;
     public float[] getModelMatrix() {
@@ -72,8 +73,8 @@ public class TexturedRect {
 
         final float[] cubeTextureCoordinateData = { 0f, 0f, 0f, 1f, 1f, 1f, 1f, 0f };
 
-        mCubeTextureCoordinates = ByteBuffer.allocateDirect(cubeTextureCoordinateData.length * 4).order(ByteOrder.nativeOrder()).asFloatBuffer();
-        mCubeTextureCoordinates.put(cubeTextureCoordinateData).position(0);
+        textureCoordinates = ByteBuffer.allocateDirect(cubeTextureCoordinateData.length * 4).order(ByteOrder.nativeOrder()).asFloatBuffer();
+        textureCoordinates.put(cubeTextureCoordinateData).position(0);
 
         ByteBuffer dlb = ByteBuffer.allocateDirect(rectCoords.length * 2);
         dlb.order(ByteOrder.nativeOrder());
@@ -98,7 +99,7 @@ public class TexturedRect {
 
     public void draw(float[] mvpMatrix)
     {
-        if (mTextureDataHandle == -1) {
+        if (textureDataHandle == -1) {
             return;
         }
         GLES20.glUseProgram(shaderProgram);
@@ -112,11 +113,11 @@ public class TexturedRect {
         int mTextureCoordinateHandle = GLES20.glGetAttribLocation(shaderProgram, "a_TexCoordinate");
 
         GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
-        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, mTextureDataHandle);
+        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textureDataHandle);
         GLES20.glUniform1i(mTextureUniformHandle, 0);
 
-        mCubeTextureCoordinates.position(0);
-        GLES20.glVertexAttribPointer(mTextureCoordinateHandle, 2, GLES20.GL_FLOAT, false, 0, mCubeTextureCoordinates);
+        textureCoordinates.position(0);
+        GLES20.glVertexAttribPointer(mTextureCoordinateHandle, 2, GLES20.GL_FLOAT, false, 0, textureCoordinates);
         GLES20.glEnableVertexAttribArray(mTextureCoordinateHandle);
 
         int mMVPMatrixHandle = GLES20.glGetUniformLocation(shaderProgram, "uMVPMatrix");
@@ -141,8 +142,8 @@ public class TexturedRect {
 
     public void loadTexture(Bitmap bitmap) {
         final int[] textureHandle = new int[1];
-        if (mTextureDataHandle != -1) {
-            textureHandle[0] = mTextureDataHandle;
+        if (textureDataHandle != -1) {
+            textureHandle[0] = textureDataHandle;
             GLES20.glDeleteTextures(1, textureHandle, 0);
             textureHandle[0] = 0;
         }
@@ -158,7 +159,7 @@ public class TexturedRect {
         } else {
             throw new RuntimeException("Error loading texture.");
         }
-        mTextureDataHandle = textureHandle[0];
+        textureDataHandle = textureHandle[0];
 
         // scale our matrix based on the aspect ratio of the bitmap
         float aspect = (float) bitmap.getWidth() / (float) bitmap.getHeight();

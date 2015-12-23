@@ -28,12 +28,9 @@ import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.opengl.GLES20;
 import android.opengl.Matrix;
-import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Environment;
 import android.os.Vibrator;
-import android.os.storage.StorageManager;
 import android.support.annotation.NonNull;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
@@ -45,9 +42,7 @@ import android.widget.Toast;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-import java.util.Locale;
 
 import javax.microedition.khronos.egl.EGLConfig;
 
@@ -78,9 +73,6 @@ public class MainActivity extends CardboardActivity implements CardboardView.Ste
     private float[] headView;
     private float[] modelView;
     private float[] modelViewProjection;
-
-    // final field for synchronizing access to the bitmaps above
-    private final Boolean bmpLock = false;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -165,10 +157,6 @@ public class MainActivity extends CardboardActivity implements CardboardView.Ste
     public void onFinishFrame(Viewport viewport) {
     }
 
-    /**
-     * Called when the Cardboard trigger is pulled.
-     * This is the only thing we'll really "use" from the CardboardView...
-     */
     @Override
     public void onCardboardTrigger() {
         Log.d(TAG, "onCardboardTrigger");
@@ -227,61 +215,15 @@ public class MainActivity extends CardboardActivity implements CardboardView.Ste
 
     private void findImages() {
         // kick off our task to find all MPOs, which will in turn kick off showing the first one.
-        new MpoFindTask().execute((Void) null);
+        new MainFindTask().execute((Void) null);
     }
 
-    /**
-     * Task that finds all MPO files in external storage.
-     * Returns a (flat) list of File objects.
-     */
-    private class MpoFindTask extends AsyncTask<Void, Integer, List<File>> {
-
-        private List<File> getMpoFiles(File parentDir, int level) {
-            ArrayList<File> inFiles = new ArrayList<>();
-            if (parentDir == null || level > 2) {
-                return inFiles;
-            }
-            File[] files = parentDir.listFiles();
-            if (files == null) {
-                return inFiles;
-            }
-            for (File file : files) {
-                if (file.isDirectory()) {
-                    inFiles.addAll(getMpoFiles(file, level + 1));
-                } else {
-                    if (file.getName().toLowerCase(Locale.ENGLISH).endsWith(".mpo")) {
-                        inFiles.add(file);
-                        Log.d(TAG, "Found MPO: " + file.getAbsolutePath());
-                    }
-                }
-            }
-            return inFiles;
+    private class MainFindTask extends MpoUtils.MpoFindTask {
+        public MainFindTask() {
+            super(MainActivity.this);
         }
 
-        protected List<File> doInBackground(Void... dummy) {
-            List<File> mpoFiles = new ArrayList<>();
-            List<String> pathList = new ArrayList<>();
-            StorageManager sm = (StorageManager) getSystemService(Context.STORAGE_SERVICE);
-            try {
-                String[] volumes = (String[]) sm.getClass().getMethod("getVolumePaths").invoke(sm);
-                if (volumes != null && volumes.length > 0) {
-                    pathList.addAll(Arrays.asList(volumes));
-                }
-            }catch(Exception e) {
-                e.printStackTrace();
-            }
-            if (pathList.size() == 0 && Environment.getExternalStorageDirectory() != null) {
-                pathList.add(Environment.getExternalStorageDirectory().getAbsolutePath());
-            }
-            for (String path : pathList) {
-                mpoFiles.addAll(getMpoFiles(new File(path), 0));
-            }
-            return mpoFiles;
-        }
-
-        protected void onProgressUpdate(Integer... progress) {
-        }
-
+        @Override
         protected void onPostExecute(List<File> results) {
             mpoFileList.clear();
             setProgress(false);
@@ -305,22 +247,24 @@ public class MainActivity extends CardboardActivity implements CardboardView.Ste
         protected List<Long> doInBackground(File... file) {
             List<Long> results = super.doInBackground(file);
             try {
-                synchronized (bmpLock) {
-                    if (results.size() == 2) {
-                        // this is the most common type of MPO, which is left-eye / right-eye
-                        Log.d(TAG, "Found 2 JPGs, so loading 0/1...");
-                        bmpLeft = MpoUtils.loadMpoBitmapFromFile(mpoFile, results.get(0), MAX_BMP_SIZE, MAX_BMP_SIZE);
-                        bmpRight = MpoUtils.loadMpoBitmapFromFile(mpoFile, results.get(1), MAX_BMP_SIZE, MAX_BMP_SIZE);
-                    } else if (results.size() == 4) {
-                        // I've seen this type in the wild, as well, which seems to be
-                        // left-eye-hi-res / left-eye-lo-res / right-eye-hi-res / right-eye-lo-res
-                        Log.d(TAG, "Found 4 JPGs, so loading 0/2...");
-                        bmpLeft = MpoUtils.loadMpoBitmapFromFile(mpoFile, results.get(0), MAX_BMP_SIZE, MAX_BMP_SIZE);
-                        bmpRight = MpoUtils.loadMpoBitmapFromFile(mpoFile, results.get(2), MAX_BMP_SIZE, MAX_BMP_SIZE);
-                    }
+                if (results.size() == 2) {
+                    // this is the most common type of MPO, which is left-eye / right-eye
+                    Log.d(TAG, "Found 2 JPGs, so loading 0/1...");
+                    bmpLeft = MpoUtils.loadMpoBitmapFromFile(mpoFile, results.get(0), MAX_BMP_SIZE, MAX_BMP_SIZE);
+                    bmpRight = MpoUtils.loadMpoBitmapFromFile(mpoFile, results.get(1), MAX_BMP_SIZE, MAX_BMP_SIZE);
+                } else if (results.size() == 4) {
+                    // I've seen this type in the wild, as well, which seems to be
+                    // left-eye-hi-res / left-eye-lo-res / right-eye-hi-res / right-eye-lo-res
+                    Log.d(TAG, "Found 4 JPGs, so loading 0/2...");
+                    bmpLeft = MpoUtils.loadMpoBitmapFromFile(mpoFile, results.get(0), MAX_BMP_SIZE, MAX_BMP_SIZE);
+                    bmpRight = MpoUtils.loadMpoBitmapFromFile(mpoFile, results.get(2), MAX_BMP_SIZE, MAX_BMP_SIZE);
                 }
             } catch (IOException e) {
                 Log.e(TAG, "Error while reading file.", e);
+                cleanupBitmap(bmpLeft);
+                cleanupBitmap(bmpRight);
+                bmpLeft = null;
+                bmpRight = null;
             }
             return results;
         }
@@ -331,24 +275,23 @@ public class MainActivity extends CardboardActivity implements CardboardView.Ste
 
         @Override
         protected void onPostExecute(List<Long> results) {
-            synchronized (bmpLock) {
-                if (bmpLeft == null || bmpRight == null) {
-                    setStatus(true, getString(R.string.status_error_load));
-                } else {
+            if (bmpLeft == null || bmpRight == null) {
+                setStatus(true, getString(R.string.status_error_load));
+            } else {
 
-                    cardboardView.queueEvent(new Runnable() {
-                        @Override
-                        public void run() {
+                cardboardView.queueEvent(new Runnable() {
+                    @Override
+                    public void run() {
+                        rectLeftEye.loadTexture(bmpLeft);
+                        cleanupBitmap(bmpLeft);
+                        bmpLeft = null;
 
-                            rectLeftEye.loadTexture(bmpLeft);
-                            cleanupBitmap(bmpLeft);
-
-                            rectRightEye.loadTexture(bmpRight);
-                            cleanupBitmap(bmpRight);
-                        }
-                    });
-                    setStatus(false, "");
-                }
+                        rectRightEye.loadTexture(bmpRight);
+                        cleanupBitmap(bmpRight);
+                        bmpRight = null;
+                    }
+                });
+                setStatus(false, "");
             }
             setProgress(false);
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Dmitry Brant.
+ * Copyright 2016 Dmitry Brant.
 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,16 +16,23 @@
 
 package com.dmitrybrant.android.cardboardmpo;
 
+import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
+import android.os.Environment;
+import android.os.storage.StorageManager;
 import android.util.Log;
 
+import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 
 public class MpoUtils {
     private static final String TAG = "MpoUtils";
@@ -50,9 +57,9 @@ public class MpoUtils {
             mpoFile = file[0];
             List<Long> mpoOffsets = new ArrayList<>();
 
-            FileInputStream fs = null;
+            InputStream fs = null;
             try {
-                fs = new FileInputStream(mpoFile);
+                fs = new BufferedInputStream(new FileInputStream(mpoFile));
                 byte[] tempBytes = new byte[chunkLength];
                 long currentOffset = 0;
 
@@ -75,12 +82,13 @@ public class MpoUtils {
 
             } catch (IOException e) {
                 Log.e(TAG, "Error while reading file.", e);
-            }
-            if (fs != null) {
-                try {
-                    fs.close();
-                } catch (IOException e) {
-                    // don't worry
+            } finally {
+                if (fs != null) {
+                    try {
+                        fs.close();
+                    } catch (IOException e) {
+                        // don't worry
+                    }
                 }
             }
             return mpoOffsets;
@@ -97,11 +105,21 @@ public class MpoUtils {
         // First, decode the width and height of the image, so that we know how much to scale
         // it down when loading it into our ImageView (so we don't need to do a huge allocation).
         BitmapFactory.Options opts = new BitmapFactory.Options();
-        FileInputStream fs = new FileInputStream(file);
-        fs.skip(offset);
-        opts.inJustDecodeBounds = true;
-        BitmapFactory.decodeStream(fs, null, opts);
-        fs.close();
+        InputStream fs = null;
+        try {
+            fs = new BufferedInputStream(new FileInputStream(file));
+            fs.skip(offset);
+            opts.inJustDecodeBounds = true;
+            BitmapFactory.decodeStream(fs, null, opts);
+        } finally {
+            if (fs != null) {
+                try {
+                    fs.close();
+                } catch (IOException e) {
+                    // don't worry
+                }
+            }
+        }
         int scale = 1;
         if (opts.outHeight > maxHeight || opts.outWidth > maxWidth) {
             scale = (int) Math.pow(2, (int) Math.round(Math.log(maxWidth / (double) Math.max(opts.outHeight, opts.outWidth)) / Math.log(0.5)));
@@ -112,13 +130,83 @@ public class MpoUtils {
         // Decode the image for real, but now with a sampleSize.
         // We have to reopen the file stream, and re-skip to the correct offset, since
         // FileInputStream doesn't support reset().
-        fs = new FileInputStream(file);
-        fs.skip(offset);
-        BitmapFactory.Options opts2 = new BitmapFactory.Options();
-        opts2.inSampleSize = scale;
-        Bitmap bmp = BitmapFactory.decodeStream(fs, null, opts2);
-        fs.close();
+        Bitmap bmp = null;
+        fs = null;
+        try {
+            fs = new BufferedInputStream(new FileInputStream(file));
+            fs.skip(offset);
+            BitmapFactory.Options opts2 = new BitmapFactory.Options();
+            opts2.inSampleSize = scale;
+            bmp = BitmapFactory.decodeStream(fs, null, opts2);
+        } finally {
+            if (fs != null) {
+                try {
+                    fs.close();
+                } catch (IOException e) {
+                    // don't worry
+                }
+            }
+        }
         return bmp;
+    }
+
+    /**
+     * Task that finds all MPO files in external storage.
+     * Returns a (flat) list of File objects.
+     */
+    public static class MpoFindTask extends AsyncTask<Void, Integer, List<File>> {
+        private List<File> mpoFiles = new ArrayList<>();
+        private Context context;
+
+        public MpoFindTask(Context context) {
+            this.context = context;
+        }
+
+        private void getMpoFiles(File parentDir, int level) {
+            if (parentDir == null || level > 10) {
+                return;
+            }
+            File[] files = parentDir.listFiles();
+            if (files == null) {
+                return;
+            }
+            for (File file : files) {
+                if (file.isDirectory()) {
+                    getMpoFiles(file, level + 1);
+                } else {
+                    if (file.getName().toLowerCase(Locale.ENGLISH).endsWith(".mpo")) {
+                        mpoFiles.add(file);
+                        Log.d(TAG, "Found MPO: " + file.getAbsolutePath());
+                    }
+                }
+            }
+        }
+
+        protected List<File> doInBackground(Void... dummy) {
+            List<String> pathList = new ArrayList<>();
+            StorageManager sm = (StorageManager) context.getSystemService(Context.STORAGE_SERVICE);
+            try {
+                String[] volumes = (String[]) sm.getClass().getMethod("getVolumePaths").invoke(sm);
+                if (volumes != null && volumes.length > 0) {
+                    pathList.addAll(Arrays.asList(volumes));
+                }
+            }catch(Exception e) {
+                e.printStackTrace();
+            }
+            if (pathList.size() == 0 && Environment.getExternalStorageDirectory() != null) {
+                pathList.add(Environment.getExternalStorageDirectory().getAbsolutePath());
+            }
+            for (String path : pathList) {
+                getMpoFiles(new File(path), 0);
+            }
+            return mpoFiles;
+        }
+
+        protected void onProgressUpdate(Integer... progress) {
+        }
+
+        protected void onPostExecute(List<File> results) {
+        }
     }
 
     /**
@@ -130,7 +218,7 @@ public class MpoUtils {
      * @param count         Number of bytes within the array to search.
      * @return Byte offset within the array of the specified sequence, or -1 if it was not found.
      */
-    public static int searchBytes(byte[] bytesToSearch, byte[] matchBytes, int startIndex, int count) {
+    private static int searchBytes(byte[] bytesToSearch, byte[] matchBytes, int startIndex, int count) {
         int ret = -1, max = count - matchBytes.length + 1;
         boolean found;
         for (int i = startIndex; i < max; i++) {
