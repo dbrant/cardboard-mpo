@@ -8,15 +8,15 @@ android {
     defaultConfig {
         minSdkVersion 16
         targetSdkVersion 23
-        versionCode 8
-        versionName "1.4"
+        versionCode 9
+        versionName "1.5"
     }
 
     lintOptions.abortOnError false
 
     buildTypes {
         release {
-            minifyEnabled true
+            minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt')
         }
     }

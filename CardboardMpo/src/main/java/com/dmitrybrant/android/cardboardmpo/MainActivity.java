@@ -225,6 +225,9 @@ public class MainActivity extends CardboardActivity implements CardboardView.Ste
 
         @Override
         protected void onPostExecute(List<File> results) {
+            if (isDestroyed()) {
+                return;
+            }
             mpoFileList.clear();
             setProgress(false);
             if (results.size() == 0) {
@@ -275,6 +278,9 @@ public class MainActivity extends CardboardActivity implements CardboardView.Ste
 
         @Override
         protected void onPostExecute(List<Long> results) {
+            if (isDestroyed()) {
+                return;
+            }
             if (bmpLeft == null || bmpRight == null) {
                 setStatus(true, getString(R.string.status_error_load));
             } else {
