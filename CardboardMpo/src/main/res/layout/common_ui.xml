@@ -35,6 +35,7 @@
                 android:layout_height="wrap_content"
                 android:padding="8dp"
                 android:gravity="center_horizontal"
+                android:textColor="@color/info_text"
                 android:background="@color/info_background"/>
         </LinearLayout>
 
@@ -55,6 +56,7 @@
                 android:layout_height="wrap_content"
                 android:padding="8dp"
                 android:gravity="center_horizontal"
+                android:textColor="@color/info_text"
                 android:background="@color/info_background"/>
         </LinearLayout>
 

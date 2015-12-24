@@ -225,7 +225,7 @@ public class MainActivity extends CardboardActivity implements CardboardView.Ste
 
         @Override
         protected void onPostExecute(List<File> results) {
-            if (isFinishing() || isDestroyed()) {
+            if (isActivityGone()) {
                 return;
             }
             mpoFileList.clear();
@@ -278,7 +278,7 @@ public class MainActivity extends CardboardActivity implements CardboardView.Ste
 
         @Override
         protected void onPostExecute(List<Long> results) {
-            if (isFinishing() || isDestroyed()) {
+            if (isActivityGone()) {
                 return;
             }
             if (bmpLeft == null || bmpRight == null) {
@@ -328,4 +328,12 @@ public class MainActivity extends CardboardActivity implements CardboardView.Ste
         }
     }
 
+    private boolean isActivityGone() {
+        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.JELLY_BEAN) {
+            if (isDestroyed()) {
+                return true;
+            }
+        }
+        return isFinishing();
+    }
 }
