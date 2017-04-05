@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Dmitry Brant.
+ * Copyright 2016-2017 Dmitry Brant.
 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,12 @@
 
 package com.dmitrybrant.android.cardboardmpo;
 
+import android.content.Context;
 import android.graphics.Bitmap;
 import android.opengl.GLES20;
 import android.opengl.GLUtils;
 import android.opengl.Matrix;
+import android.support.annotation.NonNull;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -28,28 +30,11 @@ import java.nio.ShortBuffer;
 
 public class TexturedRect {
 
-    private final static String vertexShaderCode =
-            "attribute vec2 a_TexCoordinate;" +
-                    "varying vec2 v_TexCoordinate;" +
-                    "uniform mat4 uMVPMatrix;" +
-                    "attribute vec4 vPosition;" +
-                    "void main() {" +
-                    "  gl_Position = vPosition * uMVPMatrix;" +
-                    "  v_TexCoordinate = a_TexCoordinate;" +
-                    "}";
-
-    private final static String fragmentShaderCode =
-            "precision mediump float;" +
-                    "uniform sampler2D u_Texture;" +
-                    "varying vec2 v_TexCoordinate;" +
-                    "void main() {" +
-                    "  gl_FragColor = texture2D(u_Texture, v_TexCoordinate);" +
-                    "}";
-
     private final FloatBuffer textureCoordinates;
     private int textureDataHandle = -1;
 
     private float[] modelMatrix;
+
     public float[] getModelMatrix() {
         return modelMatrix;
     }
@@ -58,13 +43,13 @@ public class TexturedRect {
     private final FloatBuffer vertexBuffer;
     private final ShortBuffer drawListBuffer;
 
-    static final int COORDS_PER_VERTEX = 2;
-    static float rectCoords[] = { -1f, 1f, -1f, -1f, 1f, -1f, 1f, 1f };
+    private static final int COORDS_PER_VERTEX = 2;
+    private short drawOrder[] = {0, 1, 2, 0, 2, 3}; //Order to draw vertices
 
-    private short drawOrder[] = { 0, 1, 2, 0, 2, 3 }; //Order to draw vertices
+    public TexturedRect(@NonNull Context context, float xOffset) {
 
-    public TexturedRect()
-    {
+        final float rectCoords[] = {-1f + xOffset, 1f, -1f + xOffset, -1f, 1f + xOffset, -1f, 1f + xOffset, 1f};
+
         ByteBuffer bb = ByteBuffer.allocateDirect(rectCoords.length * 4); // 4 bytes per float
         bb.order(ByteOrder.nativeOrder());
         vertexBuffer = bb.asFloatBuffer();
@@ -73,7 +58,8 @@ public class TexturedRect {
 
         final float[] cubeTextureCoordinateData = { 0f, 0f, 0f, 1f, 1f, 1f, 1f, 0f };
 
-        textureCoordinates = ByteBuffer.allocateDirect(cubeTextureCoordinateData.length * 4).order(ByteOrder.nativeOrder()).asFloatBuffer();
+        textureCoordinates = ByteBuffer.allocateDirect(cubeTextureCoordinateData.length * 4)
+                .order(ByteOrder.nativeOrder()).asFloatBuffer();
         textureCoordinates.put(cubeTextureCoordinateData).position(0);
 
         ByteBuffer dlb = ByteBuffer.allocateDirect(rectCoords.length * 2);
@@ -82,23 +68,14 @@ public class TexturedRect {
         drawListBuffer.put(drawOrder);
         drawListBuffer.position(0);
 
-        int vertexShader = loadShader(GLES20.GL_VERTEX_SHADER, vertexShaderCode);
-        int fragmentShader = loadShader(GLES20.GL_FRAGMENT_SHADER, fragmentShaderCode);
-
-        shaderProgram = GLES20.glCreateProgram();
-        GLES20.glAttachShader(shaderProgram, vertexShader);
-        GLES20.glAttachShader(shaderProgram, fragmentShader);
-
-        //Texture Code
-        GLES20.glBindAttribLocation(shaderProgram, 0, "a_TexCoordinate");
-        GLES20.glLinkProgram(shaderProgram);
+        shaderProgram = Util.compileProgram(context, R.raw.vertex_shader, R.raw.fragment_shader,
+                new String[]{"a_TexCoordinate"});
 
         modelMatrix = new float[16];
         resetMatrix();
     }
 
-    public void draw(float[] mvpMatrix)
-    {
+    public void draw(float[] mvpMatrix) {
         if (textureDataHandle == -1) {
             return;
         }
@@ -127,20 +104,12 @@ public class TexturedRect {
         GLES20.glDisableVertexAttribArray(mPositionHandle);
     }
 
-    private static int loadShader(int type, String shaderCode)
-    {
-        int shader = GLES20.glCreateShader(type);
-        GLES20.glShaderSource(shader, shaderCode);
-        GLES20.glCompileShader(shader);
-        return shader;
-    }
-
     private void resetMatrix() {
         Matrix.setIdentityM(modelMatrix, 0);
         Matrix.translateM(modelMatrix, 0, 0, 0, -2f);
     }
 
-    public void loadTexture(Bitmap bitmap) {
+    public void loadTexture(@NonNull Bitmap bitmap) {
         final int[] textureHandle = new int[1];
         if (textureDataHandle != -1) {
             textureHandle[0] = textureDataHandle;
@@ -150,8 +119,7 @@ public class TexturedRect {
 
         GLES20.glGenTextures(1, textureHandle, 0);
 
-        if (textureHandle[0] != 0)
-        {
+        if (textureHandle[0] != 0) {
             GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textureHandle[0]);
             GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_NEAREST);
             GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_NEAREST);

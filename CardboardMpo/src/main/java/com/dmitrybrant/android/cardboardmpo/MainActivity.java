@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Dmitry Brant.
+ * Copyright 2015-2017 Dmitry Brant.
 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,6 @@
 
 package com.dmitrybrant.android.cardboardmpo;
 
-import com.google.vrtoolkit.cardboard.CardboardActivity;
-import com.google.vrtoolkit.cardboard.CardboardView;
-import com.google.vrtoolkit.cardboard.Eye;
-import com.google.vrtoolkit.cardboard.HeadTransform;
-import com.google.vrtoolkit.cardboard.Viewport;
-
 import android.Manifest;
 import android.content.Context;
 import android.content.pm.PackageManager;
@@ -32,12 +26,20 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Vibrator;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
 import android.view.View;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import com.google.vr.sdk.base.AndroidCompat;
+import com.google.vr.sdk.base.Eye;
+import com.google.vr.sdk.base.GvrActivity;
+import com.google.vr.sdk.base.GvrView;
+import com.google.vr.sdk.base.HeadTransform;
+import com.google.vr.sdk.base.Viewport;
 
 import java.io.File;
 import java.io.IOException;
@@ -46,7 +48,7 @@ import java.util.List;
 
 import javax.microedition.khronos.egl.EGLConfig;
 
-public class MainActivity extends CardboardActivity implements CardboardView.StereoRenderer {
+public class MainActivity extends GvrActivity implements GvrView.StereoRenderer {
     private static final String TAG = "MainActivity";
     private static final int READ_PERMISSION_REQUEST = 50;
 
@@ -57,7 +59,7 @@ public class MainActivity extends CardboardActivity implements CardboardView.Ste
     private List<File> mpoFileList = new ArrayList<>();
     private int currentFileIndex = 0;
 
-    private CardboardView cardboardView;
+    private GvrView gvrView;
     private Vibrator vibrator;
 
     private ProgressBar progressLeft;
@@ -79,10 +81,17 @@ public class MainActivity extends CardboardActivity implements CardboardView.Ste
         super.onCreate(savedInstanceState);
         setContentView(R.layout.common_ui);
 
-        cardboardView = (CardboardView) findViewById(R.id.cardboard_view);
-        cardboardView.setRestoreGLStateEnabled(false);
-        cardboardView.setRenderer(this);
-        setCardboardView(cardboardView);
+        gvrView = (GvrView) findViewById(R.id.gvr_view);
+        gvrView.setEGLConfigChooser(8, 8, 8, 8, 16, 8);
+        gvrView.setRenderer(this);
+        gvrView.setTransitionViewEnabled(true);
+        if (gvrView.setAsyncReprojectionEnabled(true)) {
+            // Async reprojection decouples the app framerate from the display framerate,
+            // allowing immersive interaction even at the throttled clockrates set by
+            // sustained performance mode.
+            AndroidCompat.setSustainedPerformanceMode(this, true);
+        }
+        setGvrView(gvrView);
 
         vibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
 
@@ -118,8 +127,8 @@ public class MainActivity extends CardboardActivity implements CardboardView.Ste
         Log.i(TAG, "onSurfaceCreated");
         GLES20.glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 
-        rectLeftEye = new TexturedRect();
-        rectRightEye = new TexturedRect();
+        rectLeftEye = new TexturedRect(this, 0.1f);
+        rectRightEye = new TexturedRect(this, -0.1f);
         checkGLError("Error after creating textures");
     }
 
@@ -134,10 +143,7 @@ public class MainActivity extends CardboardActivity implements CardboardView.Ste
         GLES20.glDisable(GLES20.GL_DEPTH_TEST);
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT | GLES20.GL_DEPTH_BUFFER_BIT);
 
-        // Apply the eye transformation to the camera.
-        Matrix.multiplyMM(view, 0, eye.getEyeView(), 0, camera, 0);
-
-        // TODO: Do something with the head transform (e.g. pan the photo around)
+        // TODO: Do something with the head and/or eye transform (e.g. pan the photo around)
         // For now, just reset the view matrix, so that the photo is in the center at all times.
         Matrix.setIdentityM(view, 0);
 
@@ -285,7 +291,7 @@ public class MainActivity extends CardboardActivity implements CardboardView.Ste
                 setStatus(true, getString(R.string.status_error_load));
             } else {
 
-                cardboardView.queueEvent(new Runnable() {
+                gvrView.queueEvent(new Runnable() {
                     @Override
                     public void run() {
                         rectLeftEye.loadTexture(bmpLeft);
@@ -318,7 +324,7 @@ public class MainActivity extends CardboardActivity implements CardboardView.Ste
         new MainLoadTask().execute(mpoFileList.get(currentFileIndex));
     }
 
-    private void cleanupBitmap(Bitmap bmp) {
+    private void cleanupBitmap(@Nullable Bitmap bmp) {
         if (bmp != null) {
             try {
                 bmp.recycle();
@@ -329,11 +335,6 @@ public class MainActivity extends CardboardActivity implements CardboardView.Ste
     }
 
     private boolean isActivityGone() {
-        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.JELLY_BEAN) {
-            if (isDestroyed()) {
-                return true;
-            }
-        }
-        return isFinishing();
+        return isDestroyed() || isFinishing();
     }
 }

@@ -22,6 +22,8 @@ import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
 import android.os.Environment;
 import android.os.storage.StorageManager;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.util.Log;
 
 import java.io.BufferedInputStream;
@@ -46,7 +48,7 @@ public class MpoUtils {
         protected File mpoFile;
 
         protected List<Long> doInBackground(File... file) {
-            /**
+            /*
              * An MPO file is simply multiple JPG files concatenated together.
              * We can detect their locations by simply looking for the beginning markers of a
              * JPG image. So that's what we'll do.
@@ -101,7 +103,9 @@ public class MpoUtils {
         }
     }
 
-    public static Bitmap loadMpoBitmapFromFile(File file, long offset, int maxWidth, int maxHeight) throws IOException {
+    @Nullable
+    public static Bitmap loadMpoBitmapFromFile(@NonNull File file, long offset, int maxWidth,
+                                               int maxHeight) throws IOException {
         // First, decode the width and height of the image, so that we know how much to scale
         // it down when loading it into our ImageView (so we don't need to do a huge allocation).
         BitmapFactory.Options opts = new BitmapFactory.Options();
@@ -190,7 +194,7 @@ public class MpoUtils {
                 if (volumes != null && volumes.length > 0) {
                     pathList.addAll(Arrays.asList(volumes));
                 }
-            }catch(Exception e) {
+            } catch (Exception e) {
                 e.printStackTrace();
             }
             if (pathList.size() == 0 && Environment.getExternalStorageDirectory() != null) {
