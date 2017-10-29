@@ -81,7 +81,7 @@ public class MainActivity extends GvrActivity implements GvrView.StereoRenderer 
         super.onCreate(savedInstanceState);
         setContentView(R.layout.common_ui);
 
-        gvrView = (GvrView) findViewById(R.id.gvr_view);
+        gvrView = findViewById(R.id.gvr_view);
         gvrView.setEGLConfigChooser(8, 8, 8, 8, 16, 8);
         gvrView.setRenderer(this);
         gvrView.setTransitionViewEnabled(true);
@@ -95,10 +95,10 @@ public class MainActivity extends GvrActivity implements GvrView.StereoRenderer 
 
         vibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
 
-        progressLeft = (ProgressBar) findViewById(R.id.progress_left);
-        progressRight = (ProgressBar) findViewById(R.id.progress_right);
-        statusLeft = (TextView) findViewById(R.id.status_text_left);
-        statusRight = (TextView) findViewById(R.id.status_text_right);
+        progressLeft = findViewById(R.id.progress_left);
+        progressRight = findViewById(R.id.progress_right);
+        statusLeft = findViewById(R.id.status_text_left);
+        statusRight = findViewById(R.id.status_text_right);
 
         setProgress(true);
         setStatus(true, getString(R.string.status_finding_files));
