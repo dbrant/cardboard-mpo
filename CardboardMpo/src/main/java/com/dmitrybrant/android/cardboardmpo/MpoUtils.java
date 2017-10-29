@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Dmitry Brant.
+ * Copyright 2017 Dmitry Brant.
 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -160,10 +160,10 @@ public class MpoUtils {
      */
     public static class MpoFindTask extends AsyncTask<Void, Integer, List<File>> {
         private List<File> mpoFiles = new ArrayList<>();
-        private Context context;
+        private StorageManager sm;
 
-        public MpoFindTask(Context context) {
-            this.context = context;
+        MpoFindTask(@NonNull Context context) {
+            sm = (StorageManager) context.getSystemService(Context.STORAGE_SERVICE);
         }
 
         private void getMpoFiles(File parentDir, int level) {
@@ -188,7 +188,6 @@ public class MpoUtils {
 
         protected List<File> doInBackground(Void... dummy) {
             List<String> pathList = new ArrayList<>();
-            StorageManager sm = (StorageManager) context.getSystemService(Context.STORAGE_SERVICE);
             try {
                 String[] volumes = (String[]) sm.getClass().getMethod("getVolumePaths").invoke(sm);
                 if (volumes != null && volumes.length > 0) {
