@@ -9,15 +9,20 @@ android {
         targetSdkVersion 27
         versionCode 14
         versionName "1.9"
+        vectorDrawables.useSupportLibrary true
     }
-
-    lintOptions.abortOnError false
-
     buildTypes {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt')
         }
+    }
+    lintOptions {
+        abortOnError false
+    }
+    compileOptions {
+        targetCompatibility 1.8
+        sourceCompatibility 1.8
     }
 }
 
@@ -27,6 +32,7 @@ dependencies {
         exclude group: 'com.android.support', module: 'support-annotations'
     })
     compile 'com.android.support:appcompat-v7:27.0.2'
+    compile "com.android.support:design:27.0.2"
     compile 'com.google.vr:sdk-base:1.30.0'
     testCompile 'junit:junit:4.12'
     compile fileTree(dir: 'libs', include: ['*.jar'])
