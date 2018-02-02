@@ -1,9 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Cardboard MPO Viewer</string>
+    <string name="app_name">MPO 3D image viewer</string>
     <string name="status_finding_files">Searching for MPO files…</string>
     <string name="status_loading_file">Loading %s…</string>
     <string name="status_error_load">Error while loading file.</string>
     <string name="status_error_not_found">No MPO files found.</string>
-    <string name="error_grant_permission">Please grant read permissions to search for pictures.</string>
+    <string name="status_error_not_loaded">No MPO file loaded.</string>
+    <string name="error_grant_permission">Please grant read permissions to open pictures.</string>
+
+    <string name="load_mpo">Open MPO file…</string>
+    <string name="reverse_eyes">Reverse order</string>
+    <string name="about">About…</string>
+    <string name="about_text">This app allows you to view MPO files, which are photos captured by 3D cameras. Tap the VR button at the bottom to view the current photo in your VR headset!\n\nCopyright © 2017-2018 Dmitry Brant.</string>
+
 </resources>
