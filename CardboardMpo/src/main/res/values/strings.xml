@@ -11,6 +11,6 @@
     <string name="load_mpo">Open MPO file…</string>
     <string name="reverse_eyes">Reverse order</string>
     <string name="about">About…</string>
-    <string name="about_text">This app allows you to view MPO files, which are photos captured by 3D cameras. Tap the VR button at the bottom to view the current photo in your VR headset!\n\nCopyright © 2017-2018 Dmitry Brant.</string>
+    <string name="about_text">This app allows you to view MPO files, which are photos captured by 3D cameras. Tap the VR button at the bottom to view the current photo in your VR headset!\n\nCopyright © 2017–2018 Dmitry Brant.</string>
 
 </resources>
