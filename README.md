@@ -12,7 +12,7 @@ This is a simple app for viewing 3D MPO images on your Android device using Goog
 
 ## License
 
-    Copyright 2015-2016 Dmitry Brant
+    Copyright 2015-2019 Dmitry Brant
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
