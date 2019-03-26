@@ -2,7 +2,7 @@ package com.dmitrybrant.android.cardboardmpo;
 
 import android.app.Application;
 import android.graphics.Bitmap;
-import android.support.annotation.Nullable;
+import androidx.annotation.Nullable;
 
 /*
  * Copyright 2017-2018 Dmitry Brant. All rights reserved.
