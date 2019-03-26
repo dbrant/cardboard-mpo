@@ -30,7 +30,7 @@ dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
 
     implementation 'com.google.android.material:material:1.0.0'
-    implementation 'com.google.vr:sdk-base:1.140.0'
+    implementation 'com.google.vr:sdk-base:1.180.0'
 
     testImplementation 'junit:junit:4.12'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.1.1'
