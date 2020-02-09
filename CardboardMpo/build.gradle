@@ -9,6 +9,10 @@ android {
         versionCode 17
         versionName "1.91"
         vectorDrawables.useSupportLibrary true
+
+        ndk {
+            abiFilters 'armeabi-v7a', 'arm64-v8a'
+        }
     }
     buildTypes {
         release {
