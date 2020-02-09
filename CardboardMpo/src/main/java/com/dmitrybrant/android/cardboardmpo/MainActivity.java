@@ -10,10 +10,13 @@ import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.view.ViewCompat;
+
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.Toast;
@@ -44,6 +47,7 @@ public class MainActivity extends AppCompatActivity {
     private ImageView imageLeft;
     private ImageView imageRight;
     private ProgressBar progressBar;
+    private View vrButton;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -55,8 +59,18 @@ public class MainActivity extends AppCompatActivity {
         imageRight = findViewById(R.id.image_right);
         progressBar = findViewById(R.id.model_progress_bar);
         progressBar.setVisibility(View.GONE);
+        vrButton = findViewById(R.id.vr_fab);
 
-        findViewById(R.id.vr_fab).setOnClickListener((View v) -> startVrActivity());
+        vrButton.setOnClickListener((View v) -> startVrActivity());
+
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.container_view), (v, insets) -> {
+            FrameLayout.LayoutParams params = (FrameLayout.LayoutParams) vrButton.getLayoutParams();
+            params.topMargin = insets.getSystemWindowInsetTop();
+            params.bottomMargin = insets.getSystemWindowInsetBottom();
+            params.leftMargin = insets.getSystemWindowInsetLeft();
+            params.rightMargin = insets.getSystemWindowInsetRight();
+            return insets.consumeSystemWindowInsets();
+        });
 
         if (getIntent().getData() != null && savedInstanceState == null) {
             beginLoadFile(getIntent().getData());
