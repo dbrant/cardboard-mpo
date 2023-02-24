@@ -27,6 +27,7 @@ android {
     lint {
         abortOnError false
     }
+    namespace 'com.dmitrybrant.android.cardboardmpo'
 }
 
 dependencies {
