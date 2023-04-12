@@ -1,7 +1,5 @@
 # MPO image viewer for Google Cardboard
 
-[![Build Status](https://travis-ci.org/dbrant/cardboard-mpo.svg)](https://travis-ci.org/dbrant/cardboard-mpo)
-
 This is a simple app for viewing 3D MPO images on your Android device using Google Cardboard!
 
 ## Features
