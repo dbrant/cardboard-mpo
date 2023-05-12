@@ -91,22 +91,20 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        switch (item.getItemId()) {
-            case R.id.menu_open_model:
-                checkReadPermissionThenOpen();
-                return true;
-            case R.id.menu_reverse_eyes:
-                Bitmap temp = app.getBmpLeft();
-                app.setBmpLeft(app.getBmpRight());
-                app.setBmpRight(temp);
-                updateCurrentBitmaps();
-                return true;
-            case R.id.menu_about:
-                showAboutDialog();
-                return true;
-            default:
-                return super.onOptionsItemSelected(item);
+        if (item.getItemId() == R.id.menu_open_model) {
+            checkReadPermissionThenOpen();
+            return true;
+        } else if (item.getItemId() == R.id.menu_reverse_eyes) {
+            Bitmap temp = app.getBmpLeft();
+            app.setBmpLeft(app.getBmpRight());
+            app.setBmpRight(temp);
+            updateCurrentBitmaps();
+            return true;
+        } else if (item.getItemId() == R.id.menu_about) {
+            showAboutDialog();
+            return true;
         }
+        return super.onOptionsItemSelected(item);
     }
 
     @Override
