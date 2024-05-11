@@ -121,7 +121,7 @@ public class MpoUtils {
         private String getFileName(@NonNull ContentResolver cr, @NonNull Uri uri) {
             if ("content".equals(uri.getScheme())) {
                 String[] projection = {MediaStore.MediaColumns.DISPLAY_NAME};
-                Cursor metaCursor = ContentResolverCompat.query(cr, uri, projection, null, null, null, null);
+                Cursor metaCursor = ContentResolverCompat.query(cr, uri, projection, null, null, null, (android.os.CancellationSignal)null);
                 if (metaCursor != null) {
                     try {
                         if (metaCursor.moveToFirst()) {
