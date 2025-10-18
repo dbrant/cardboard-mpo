@@ -28,6 +28,7 @@ import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.launch
 import java.io.BufferedInputStream
 import java.io.InputStream
+import kotlin.math.max
 
 /*
  * Copyright 2017+ Dmitry Brant. All rights reserved.
@@ -62,15 +63,17 @@ class MainActivity : AppCompatActivity() {
 
         vrButton.setOnClickListener { startVrActivity() }
 
-        ViewCompat.setOnApplyWindowInsetsListener(
-            findViewById<View?>(R.id.container_view)
-        ) { v: View?, insets: WindowInsetsCompat? ->
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.container_view)) { view, insets ->
+            val newStatusBarInsets = insets.getInsets(WindowInsetsCompat.Type.statusBars())
+            val newNavBarInsets = insets.getInsets(WindowInsetsCompat.Type.navigationBars())
+            val newCaptionBarInsets = insets.getInsets(WindowInsetsCompat.Type.captionBar())
+            val newSystemBarInsets = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            val rightInset = max(max(max(newStatusBarInsets.right, newCaptionBarInsets.right), newSystemBarInsets.right), newNavBarInsets.right)
+            val bottomInset = max(max(max(newStatusBarInsets.bottom, newCaptionBarInsets.bottom), newSystemBarInsets.bottom), newNavBarInsets.bottom)
             val params = vrButton.layoutParams as FrameLayout.LayoutParams
-            params.topMargin = insets!!.getSystemWindowInsetTop()
-            params.bottomMargin = insets.getSystemWindowInsetBottom()
-            params.leftMargin = insets.getSystemWindowInsetLeft()
-            params.rightMargin = insets.getSystemWindowInsetRight()
-            insets.consumeSystemWindowInsets()
+            params.rightMargin = rightInset
+            params.bottomMargin = bottomInset
+            insets
         }
 
         if (intent.data != null && savedInstanceState == null) {
