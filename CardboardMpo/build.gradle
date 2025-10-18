@@ -1,4 +1,7 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
 apply plugin: 'com.android.application'
+apply plugin: 'org.jetbrains.kotlin.android'
 
 android {
     compileSdk = 36
@@ -27,6 +30,11 @@ android {
         targetCompatibility JavaVersion.VERSION_17
         sourceCompatibility JavaVersion.VERSION_17
     }
+    kotlin {
+        compilerOptions {
+            jvmTarget = JvmTarget.JVM_17
+        }
+    }
     lint {
         abortOnError false
     }
@@ -38,6 +46,7 @@ dependencies {
     implementation fileTree(dir: 'libs', include: ['*.aar'])
 
     implementation 'com.google.android.material:material:1.13.0'
+    implementation 'androidx.core:core-ktx:1.17.0'
 
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.7.0'
