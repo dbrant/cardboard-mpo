@@ -10,6 +10,7 @@ import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
+import android.view.ViewGroup
 import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.ProgressBar
@@ -19,6 +20,8 @@ import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.isVisible
+import androidx.core.view.updateLayoutParams
+import androidx.core.view.updatePadding
 import androidx.lifecycle.lifecycleScope
 import com.dmitrybrant.android.cardboardmpo.MpoUtils.getFileName
 import com.dmitrybrant.android.cardboardmpo.MpoUtils.loadMpoBitmapFromFile
@@ -46,6 +49,7 @@ import kotlin.math.max
  * limitations under the License.
  */
 class MainActivity : AppCompatActivity() {
+    private lateinit var toolbarContainer: FrameLayout
     private lateinit var imageLeft: ImageView
     private lateinit var imageRight: ImageView
     private lateinit var progressBar: ProgressBar
@@ -60,19 +64,28 @@ class MainActivity : AppCompatActivity() {
         progressBar = findViewById(R.id.model_progress_bar)
         progressBar.isVisible = false
         vrButton = findViewById(R.id.vr_fab)
-
         vrButton.setOnClickListener { startVrActivity() }
+        toolbarContainer = findViewById(R.id.mainToolbarContainer)
+        setSupportActionBar(findViewById(R.id.mainToolbar))
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.container_view)) { view, insets ->
             val newStatusBarInsets = insets.getInsets(WindowInsetsCompat.Type.statusBars())
             val newNavBarInsets = insets.getInsets(WindowInsetsCompat.Type.navigationBars())
             val newCaptionBarInsets = insets.getInsets(WindowInsetsCompat.Type.captionBar())
             val newSystemBarInsets = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            val rightInset = max(max(max(newStatusBarInsets.right, newCaptionBarInsets.right), newSystemBarInsets.right), newNavBarInsets.right)
+            val topInset = max(max(max(newStatusBarInsets.top, newCaptionBarInsets.top), newSystemBarInsets.top), newNavBarInsets.top)
             val bottomInset = max(max(max(newStatusBarInsets.bottom, newCaptionBarInsets.bottom), newSystemBarInsets.bottom), newNavBarInsets.bottom)
-            val params = vrButton.layoutParams as FrameLayout.LayoutParams
-            params.rightMargin = rightInset
-            params.bottomMargin = bottomInset
+            toolbarContainer.updatePadding(top = topInset)
+            vrButton.updateLayoutParams<ViewGroup.MarginLayoutParams> {
+                bottomMargin = bottomInset
+                leftMargin = newNavBarInsets.left
+                rightMargin = newNavBarInsets.right
+            }
+            progressBar.updateLayoutParams<ViewGroup.MarginLayoutParams> {
+                bottomMargin = bottomInset
+                leftMargin = newNavBarInsets.left
+                rightMargin = newNavBarInsets.right
+            }
             insets
         }
 
@@ -92,18 +105,18 @@ class MainActivity : AppCompatActivity() {
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
-            item.itemId -> {
+            R.id.menu_open_file -> {
                 checkReadPermissionThenOpen()
                 return true
             }
-            item.itemId -> {
+            R.id.menu_reverse_eyes -> {
                 val temp = MpoApplication.getInstance().bmpLeft
                 MpoApplication.getInstance().bmpLeft = MpoApplication.getInstance().bmpRight
                 MpoApplication.getInstance().bmpRight = temp
                 updateCurrentBitmaps()
                 return true
             }
-            item.itemId -> {
+            R.id.menu_about -> {
                 showAboutDialog()
                 return true
             }

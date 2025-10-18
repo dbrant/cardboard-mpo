@@ -7,7 +7,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/colorWindowBackground"
-    tools:context="com.dmitrybrant.android.cardboardmpo.MainActivity">
+    tools:context=".MainActivity">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -31,16 +31,29 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_margin="16dp"
-        android:layout_gravity="top|end"/>
+        android:layout_gravity="bottom"/>
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/vr_fab"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|end"
-        app:useCompatPadding="true"
         app:backgroundTint="@color/colorPrimaryLight"
+        app:useCompatPadding="true"
         app:tint="@android:color/white"
-        app:srcCompat="@drawable/ic_google_cardboard"/>
+        app:srcCompat="@drawable/ic_google_cardboard"
+        android:contentDescription="@null" />
+
+    <FrameLayout
+        android:id="@+id/mainToolbarContainer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/colorPrimary"
+        android:layout_gravity="top">
+        <com.google.android.material.appbar.MaterialToolbar
+            android:id="@+id/mainToolbar"
+            android:layout_width="match_parent"
+            android:layout_height="?attr/actionBarSize"/>
+    </FrameLayout>
 
 </FrameLayout>
