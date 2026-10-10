@@ -1,0 +1,21 @@
+[versions]
+core-ktx = "1.19.1"
+espresso-core = "3.7.0"
+gradle = "9.4.1"
+gradle-toolchains-foojay-resolver-convention = "1.0.0"
+junit = "4.13.2"
+kotlin-gradle-plugin = "2.4.21"
+material = "1.14.0"
+protobuf-gradle-plugin = "0.10.0"
+
+[libraries]
+androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "core-ktx" }
+androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espresso-core" }
+gradle = { group = "com.android.tools.build", name = "gradle", version.ref = "gradle" }
+junit = { group = "junit", name = "junit", version.ref = "junit" }
+kotlin-gradle-plugin = { group = "org.jetbrains.kotlin", name = "kotlin-gradle-plugin", version.ref = "kotlin-gradle-plugin" }
+material = { group = "com.google.android.material", name = "material", version.ref = "material" }
+protobuf-gradle-plugin = { group = "com.google.protobuf", name = "protobuf-gradle-plugin", version.ref = "protobuf-gradle-plugin" }
+
+[plugins]
+gradle-toolchains-foojay-resolver-convention = { id = "org.gradle.toolchains.foojay-resolver-convention", version.ref = "gradle-toolchains-foojay-resolver-convention" }

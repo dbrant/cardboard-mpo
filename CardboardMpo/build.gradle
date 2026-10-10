@@ -40,10 +40,10 @@ dependencies {
 
     implementation project(':cardboard')
 
-    implementation 'com.google.android.material:material:1.14.0'
-    implementation 'androidx.core:core-ktx:1.19.0'
+    implementation libs.material
+    implementation libs.androidx.core.ktx
 
-    testImplementation 'junit:junit:4.13.2'
-    androidTestImplementation 'androidx.test.espresso:espresso-core:3.7.0'
+    testImplementation libs.junit
+    androidTestImplementation libs.androidx.espresso.core
 
 }

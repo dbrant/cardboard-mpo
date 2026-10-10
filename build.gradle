@@ -9,9 +9,9 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:9.2.1'
-        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
-        classpath 'com.google.protobuf:protobuf-gradle-plugin:0.10.0'
+        classpath libs.gradle
+        classpath libs.kotlin.gradle.plugin
+        classpath libs.protobuf.gradle.plugin
     }
 }
 
