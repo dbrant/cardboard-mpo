@@ -181,7 +181,7 @@ class MainActivity : AppCompatActivity() {
         if (MpoApplication.getInstance().bmpLeft == null || MpoApplication.getInstance().bmpRight == null) {
             Toast.makeText(this, R.string.status_error_not_loaded, Toast.LENGTH_SHORT).show()
         } else {
-            startActivity(Intent(this, MpoGvrActivity::class.java))
+            startActivity(Intent(this, MpoCardboardActivity::class.java))
         }
     }
 

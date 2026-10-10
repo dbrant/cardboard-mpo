@@ -8,6 +8,16 @@ This is a simple app for viewing 3D MPO images on your Android device using Goog
 - Press the trigger button on your Cardboard to advance to the next image.
 - Renders the images using OpenGL ES 2.0, via the Cardboard SDK, to take advantage of automatic barrel distortion and offset.
 
+## Building
+
+VR mode uses the [Google Cardboard SDK](https://github.com/googlevr/cardboard), which is built from source from the `third_party/cardboard` submodule. Clone the repository with its submodules:
+
+```
+git clone --recurse-submodules https://github.com/dbrant/cardboard-mpo.git
+```
+
+or, in an existing clone, run `git submodule update --init`. Building the SDK requires the Android NDK and CMake, which Android Studio installs from the SDK Manager.
+
 ## License
 
     Copyright 2015-2019 Dmitry Brant

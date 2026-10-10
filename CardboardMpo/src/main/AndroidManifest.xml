@@ -6,14 +6,17 @@
     <uses-permission android:name="android.permission.VIBRATE"/>
 
     <uses-feature android:glEsVersion="0x00020000" android:required="true" />
+    <!-- The Cardboard SDK's manifest asks for OpenGL ES 3.0, but its Java API (and this app) only
+         use OpenGL ES 2.0, so that is removed. It's marked as not required, since the manifest merger
+         would otherwise drop the lower version above in favor of it before removing it. -->
+    <uses-feature android:glEsVersion="0x00030000" android:required="false" tools:node="remove" />
 
     <uses-feature android:name="android.hardware.sensor.accelerometer" android:required="true"/>
     <uses-feature android:name="android.hardware.sensor.gyroscope" android:required="true"/>
 
-    <!-- Indicates use of Android's VR-mode, available only on Android N+. -->
-    <uses-feature android:name="android.software.vr.mode" android:required="false"/>
-    <!-- Indicates use of VR features that are available only on Daydream-ready devices. -->
-    <uses-feature android:name="android.hardware.vr.high_performance" android:required="false"/>
+    <!-- The Cardboard SDK uses the camera for scanning the QR codes of viewers, which is optional. -->
+    <uses-feature android:name="android.hardware.camera" android:required="false"/>
+    <uses-feature android:name="android.hardware.camera.autofocus" android:required="false"/>
 
     <application
         android:allowBackup="true"
@@ -68,11 +71,10 @@
         </activity>
 
         <activity
-            android:name=".MpoGvrActivity"
+            android:name=".MpoCardboardActivity"
             android:label="@string/app_name"
             android:screenOrientation="landscape"
             android:configChanges="orientation|keyboardHidden|screenSize"
-            android:enableVrMode="@string/gvr_vr_mode_component"
             android:resizeableActivity="false">
         </activity>
 

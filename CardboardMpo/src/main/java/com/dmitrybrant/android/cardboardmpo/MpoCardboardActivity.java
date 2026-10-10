@@ -19,27 +19,31 @@ package com.dmitrybrant.android.cardboardmpo;
 import android.content.Context;
 import android.opengl.GLES20;
 import android.opengl.Matrix;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Vibrator;
 import android.util.Log;
+import android.view.WindowManager;
 
-import com.google.vr.sdk.base.AndroidCompat;
-import com.google.vr.sdk.base.Eye;
-import com.google.vr.sdk.base.GvrActivity;
-import com.google.vr.sdk.base.GvrView;
-import com.google.vr.sdk.base.HeadTransform;
-import com.google.vr.sdk.base.Viewport;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.view.WindowCompat;
+import androidx.core.view.WindowInsetsCompat;
+import androidx.core.view.WindowInsetsControllerCompat;
+
+import com.google.cardboard.sdk.CardboardView;
+import com.google.cardboard.sdk.HeadTransform;
+import com.google.cardboard.sdk.Viewport;
 
 import javax.microedition.khronos.egl.EGLConfig;
 
-public class MpoGvrActivity extends GvrActivity implements GvrView.StereoRenderer {
-    private static final String TAG = "MpoGvrActivity";
+public class MpoCardboardActivity extends AppCompatActivity implements CardboardView.Renderer {
+    private static final String TAG = "MpoCardboardActivity";
 
     private static final float Z_NEAR = 0.1f;
     private static final float Z_FAR = 5.0f;
     private static final float CAMERA_Z = 1f;
 
-    private GvrView gvrView;
+    private CardboardView cardboardView;
     private Vibrator vibrator;
 
     private TexturedRect rectLeftEye;
@@ -54,19 +58,25 @@ public class MpoGvrActivity extends GvrActivity implements GvrView.StereoRendere
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_gvr);
+        setContentView(R.layout.activity_cardboard);
 
-        gvrView = findViewById(R.id.gvr_view);
-        gvrView.setEGLConfigChooser(8, 8, 8, 8, 16, 8);
-        gvrView.setRenderer(this);
-        gvrView.setTransitionViewEnabled(true);
-        if (gvrView.setAsyncReprojectionEnabled(true)) {
-            // Async reprojection decouples the app framerate from the display framerate,
-            // allowing immersive interaction even at the throttled clockrates set by
-            // sustained performance mode.
-            AndroidCompat.setSustainedPerformanceMode(this, true);
+        // Use the whole screen, without the system bars, and keep it on.
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            getWindow().getAttributes().layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;
         }
-        setGvrView(gvrView);
+        WindowInsetsControllerCompat insetsController = WindowCompat.getInsetsController(getWindow(), getWindow().getDecorView());
+        insetsController.hide(WindowInsetsCompat.Type.systemBars());
+        insetsController.setSystemBarsBehavior(WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
+
+        cardboardView = findViewById(R.id.cardboard_view);
+        cardboardView.setEGLConfigChooser(8, 8, 8, 8, 16, 8);
+        cardboardView.setRenderer(this);
+        cardboardView.setStereoRenderMode(true);
+
+        cardboardView.setOnBackButtonClick(this::finish);
+        cardboardView.setOnSettingsButtonClick(cardboardView::scanViewerQrCode);
+        cardboardView.setOnTriggerEvent(this::onCardboardTrigger);
 
         vibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
 
@@ -75,6 +85,24 @@ public class MpoGvrActivity extends GvrActivity implements GvrView.StereoRendere
         modelViewProjection = new float[16];
         modelView = new float[16];
         headView = new float[16];
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        cardboardView.onResume();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        cardboardView.onPause();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        cardboardView.onDestroy();
     }
 
     @Override
@@ -90,7 +118,6 @@ public class MpoGvrActivity extends GvrActivity implements GvrView.StereoRendere
     @Override
     public void onSurfaceCreated(EGLConfig config) {
         Log.i(TAG, "onSurfaceCreated");
-        GLES20.glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 
         rectLeftEye = new TexturedRect(this, 0);
         rectRightEye = new TexturedRect(this, 0);
@@ -103,19 +130,21 @@ public class MpoGvrActivity extends GvrActivity implements GvrView.StereoRendere
     public void onNewFrame(HeadTransform headTransform) {
         Matrix.setLookAtM(camera, 0, 0.0f, 0.0f, CAMERA_Z, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f);
         headTransform.getHeadView(headView, 0);
+
+        // CardboardView clears the frame (for both eyes) after this, and its distortion pass at the
+        // end of the previous frame changes some of the GL state, so the state is set for each frame.
+        GLES20.glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+        GLES20.glDisable(GLES20.GL_DEPTH_TEST);
     }
 
     @Override
-    public void onDrawEye(Eye eye) {
-        GLES20.glDisable(GLES20.GL_DEPTH_TEST);
-        GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT | GLES20.GL_DEPTH_BUFFER_BIT);
-
+    public void onDrawEye(CardboardView.Eye eye) {
         // TODO: Do something with the head and/or eye transform (e.g. pan the photo around)
         // For now, just reset the view matrix, so that the photo is in the center at all times.
         Matrix.setIdentityM(view, 0);
 
         float[] perspective = eye.getPerspective(Z_NEAR, Z_FAR);
-        if (eye.getType() == 1) {
+        if (eye.getEyeType() == CardboardView.Eye.LEFT) {
             Matrix.multiplyMM(modelView, 0, view, 0, rectLeftEye.getModelMatrix(), 0);
             Matrix.multiplyMM(modelViewProjection, 0, perspective, 0, modelView, 0);
             rectLeftEye.draw(modelViewProjection);
@@ -130,8 +159,7 @@ public class MpoGvrActivity extends GvrActivity implements GvrView.StereoRendere
     public void onFinishFrame(Viewport viewport) {
     }
 
-    @Override
-    public void onCardboardTrigger() {
+    private void onCardboardTrigger() {
         Log.d(TAG, "onCardboardTrigger");
         // Always give user feedback.
         vibrator.vibrate(50);
@@ -146,7 +174,7 @@ public class MpoGvrActivity extends GvrActivity implements GvrView.StereoRendere
     }
 
     private void updateBitmaps() {
-        gvrView.queueEvent(() -> {
+        cardboardView.queueEvent(() -> {
             rectLeftEye.loadTexture(MpoApplication.getInstance().getBmpLeft());
             rectRightEye.loadTexture(MpoApplication.getInstance().getBmpRight());
         });
